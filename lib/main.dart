@@ -1,13 +1,14 @@
 import 'package:dublin_rail_map/page/MapPage.dart';
 import 'package:dublin_rail_map/page/OverviewPage.dart';
 import 'package:dublin_rail_map/page/SearchPage.dart';
-import 'package:dublin_rail_map/services/DataService.dart';
+import 'package:dublin_rail_map/services/StationNameConst.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 void main() {
   runApp(MaterialApp(
     title: 'Dublin Rail Map',
+    theme: new ThemeData(scaffoldBackgroundColor: backgroundColor),
     home: MyApp(),
   ));
 }
@@ -30,9 +31,11 @@ class _MyAppState extends State<MyApp> {
   static List<Widget> _widgetOptions = <Widget>[
     SearchPage(),
     MapPage(),
-    Text(
-      'Index 2: School',
-      style: optionStyle,
+    Center(
+      child: Text(
+        'Thank you for viewing the ads\n',
+        style: optionStyle,
+      ),
     ),
   ];
 
@@ -51,15 +54,9 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context)
-              .push(MaterialPageRoute(builder: (context) => SummaryTimelineWidget()));
-        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[

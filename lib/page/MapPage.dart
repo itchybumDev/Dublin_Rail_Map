@@ -1,3 +1,4 @@
+import 'package:dublin_rail_map/services/StationNameConst.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
@@ -9,10 +10,9 @@ class MapPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-        color: Colors.white,
         child: PhotoView(
           backgroundDecoration: new BoxDecoration(
-            color: Colors.white,
+            color: backgroundColor,
           ),
           minScale: 0.3,
           maxScale: 3.0,

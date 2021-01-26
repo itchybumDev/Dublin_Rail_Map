@@ -1,11 +1,7 @@
 import 'package:dublin_rail_map/page/OverviewPage.dart';
-import 'package:dublin_rail_map/page/ResultPage.dart';
 import 'package:dublin_rail_map/page/SearchBar.dart';
-import 'package:dublin_rail_map/services/DataService.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-import '../main.dart';
 
 class SearchPage extends StatefulWidget {
   final callback;
@@ -53,8 +49,30 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
-        Container(
-          color: Colors.white,
+        Positioned(
+          top: 200,
+          left: 1,
+          right: 1,
+          bottom: 10,
+          child: Container(
+            color: Colors.black87,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 5.0),
+                  child: Text(
+                    "Sample",
+                    style: Theme.of(context)
+                        .textTheme
+                        .headline4
+                        .copyWith(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
         Positioned(
             top: 140,
@@ -77,20 +95,11 @@ class _SearchPageState extends State<SearchPage> {
               hintText: "Destination Station"),
         ),
         Positioned(
-            top: 55,
-            right: 30,
-            child: RawMaterialButton(
-              onPressed: () {
-                print('swapping');
-              },
-              elevation: 3.0,
-              fillColor: Colors.white,
-              child: Icon(
-                FontAwesomeIcons.arrowsAltV,
-                size: 15.0,
-              ),
-              padding: EdgeInsets.all(5.0),
-              shape: CircleBorder(),
+            top: 59,
+            left: 13,
+            child: Icon(
+              FontAwesomeIcons.longArrowAltDown,
+              size: 20.0,
             )),
         Align(
           alignment: Alignment.topCenter,
@@ -99,7 +108,7 @@ class _SearchPageState extends State<SearchPage> {
               overlayBorderRadius: BorderRadius.all(Radius.circular(20)),
               onSearchResultTap: _setOrigin,
               hintText: "Origin Station"),
-        ),
+        )
       ],
     );
   }

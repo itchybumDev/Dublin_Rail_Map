@@ -71,13 +71,24 @@ class _OverviewPageState extends State<OverviewPage> {
                               ResultPage(schedule: _oneSchedule)));
                     },
                     child: Container(
+                      alignment: Alignment.center,
                       margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                       decoration: BoxDecoration(
-                        color: Colors.orangeAccent,
-                        borderRadius: BorderRadius.all(Radius.circular(25.0)),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 5,
+                            blurRadius: 7,
+                            offset: Offset(0, 3), // changes position of shadow
+                          ),
+                        ],
                       ),
-                      height: MediaQuery.of(context).size.height / 5,
-                      width: MediaQuery.of(context).size.width,
                       child: SummaryTimelineWidget(
                           processes: _processes, time: _time),
                     ),
@@ -180,122 +191,133 @@ class _SummaryTimelineWidgetState extends State<SummaryTimelineWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Timeline.tileBuilder(
-      theme: TimelineThemeData(
-        direction: Axis.horizontal,
-        connectorTheme: ConnectorThemeData(
-          space: 30.0,
-          thickness: 5.0,
+    return SizedBox(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height / 5,
+      child: Timeline.tileBuilder(
+        theme: TimelineThemeData(
+          direction: Axis.horizontal,
+          connectorTheme: ConnectorThemeData(
+            space: 30.0,
+            thickness: 5.0,
+          ),
         ),
-      ),
-      builder: TimelineTileBuilder.connected(
-        connectionDirection: ConnectionDirection.before,
-        itemExtentBuilder: (_, __) =>
-            MediaQuery.of(context).size.width / _processes.length,
-        oppositeContentsBuilder: (context, index) {
-          return Padding(
-              padding: const EdgeInsets.only(bottom: 15.0),
-              child: Text(_time[index]));
-        },
-        contentsBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 15.0),
-            child: Text(
-              _processes[index],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: getColor(index),
-              ),
-            ),
-          );
-        },
-        indicatorBuilder: (_, index) {
-          var color;
-          var child;
-          if (index == _processIndex) {
-            color = inProgressColor;
-            child = Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(
-                strokeWidth: 3.0,
-                valueColor: AlwaysStoppedAnimation(Colors.white),
+        builder: TimelineTileBuilder.connected(
+          connectionDirection: ConnectionDirection.before,
+          itemExtentBuilder: (_, __) =>
+              MediaQuery.of(context).size.width / _processes.length,
+          oppositeContentsBuilder: (context, index) {
+            return Padding(
+                padding: const EdgeInsets.only(bottom: 5.0),
+                child: Text(_time[index]));
+          },
+          contentsBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 15.0),
+              child: Text(
+                _processes[index],
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: getColor(index),
+                ),
               ),
             );
-          } else if (index < _processIndex) {
-            color = completeColor;
-            child = Icon(
-              Icons.check,
-              color: Colors.white,
-              size: 15.0,
-            );
-          } else {
-            color = todoColor;
-          }
-
-          if (index <= _processIndex) {
-            return Stack(
-              children: [
-                CustomPaint(
-                  size: Size(30.0, 30.0),
-                  painter: _BezierPainter(
-                    color: color,
-                    drawStart: index > 0,
-                    drawEnd: index < _processIndex,
-                  ),
-                ),
-                DotIndicator(
-                  size: 30.0,
-                  color: color,
-                  child: child,
-                ),
-              ],
-            );
-          } else {
-            return Stack(
-              children: [
-                CustomPaint(
-                  size: Size(15.0, 15.0),
-                  painter: _BezierPainter(
-                    color: color,
-                    drawEnd: index < _processes.length - 1,
-                  ),
-                ),
-                OutlinedDotIndicator(
-                  borderWidth: 4.0,
-                  color: color,
-                ),
-              ],
-            );
-          }
-        },
-        connectorBuilder: (_, index, type) {
-          if (index > 0) {
+          },
+          indicatorBuilder: (_, index) {
+            var color;
+            var child;
             if (index == _processIndex) {
-              final prevColor = getColor(index - 1);
-              final color = getColor(index);
-              var gradientColors;
-              if (type == ConnectorType.start) {
-                gradientColors = [Color.lerp(prevColor, color, 0.5), color];
-              } else {
-                gradientColors = [prevColor, Color.lerp(prevColor, color, 0.5)];
-              }
-              return DecoratedLineConnector(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: gradientColors,
-                  ),
+              color = inProgressColor;
+              child = Padding(
+                padding: const EdgeInsets.all(2.0),
+                //   child: CircularProgressIndicator(
+                //     strokeWidth: 3.0,
+                //     valueColor: AlwaysStoppedAnimation(Colors.white),
+                //   ),
+                // );
+                child: CircleAvatar(
+                  backgroundColor: inProgressColor,
                 ),
+              );
+            } else if (index < _processIndex) {
+              color = completeColor;
+              child = Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 15.0,
               );
             } else {
-              return SolidLineConnector(
-                color: getColor(index),
+              color = todoColor;
+            }
+
+            if (index <= _processIndex) {
+              return Stack(
+                children: [
+                  CustomPaint(
+                    size: Size(16.0, 16.0),
+                    painter: _BezierPainter(
+                      color: color,
+                      drawStart: index > 0,
+                      drawEnd: index < _processIndex,
+                    ),
+                  ),
+                  DotIndicator(
+                    size: 15.0,
+                    color: color,
+                    child: child,
+                  ),
+                ],
+              );
+            } else {
+              return Stack(
+                children: [
+                  CustomPaint(
+                    size: Size(15.0, 15.0),
+                    painter: _BezierPainter(
+                      color: color,
+                      drawEnd: index < _processes.length - 1,
+                    ),
+                  ),
+                  OutlinedDotIndicator(
+                    borderWidth: 4.0,
+                    color: color,
+                  ),
+                ],
               );
             }
-          } else {
-            return null;
-          }
-        },
-        itemCount: _processes.length,
+          },
+          connectorBuilder: (_, index, type) {
+            if (index > 0) {
+              if (index == _processIndex) {
+                final prevColor = getColor(index - 1);
+                final color = getColor(index);
+                var gradientColors;
+                if (type == ConnectorType.start) {
+                  gradientColors = [Color.lerp(prevColor, color, 0.5), color];
+                } else {
+                  gradientColors = [
+                    prevColor,
+                    Color.lerp(prevColor, color, 0.5)
+                  ];
+                }
+                return DecoratedLineConnector(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                    ),
+                  ),
+                );
+              } else {
+                return SolidLineConnector(
+                  color: getColor(index),
+                );
+              }
+            } else {
+              return null;
+            }
+          },
+          itemCount: _processes.length,
+        ),
       ),
     );
   }
