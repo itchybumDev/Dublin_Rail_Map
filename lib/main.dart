@@ -1,11 +1,17 @@
 import 'package:dublin_rail_map/page/MapPage.dart';
-import 'package:dublin_rail_map/page/OverviewPage.dart';
 import 'package:dublin_rail_map/page/SearchPage.dart';
+import 'package:dublin_rail_map/services/AdsService.dart';
+import 'package:dublin_rail_map/services/DataService.dart';
 import 'package:dublin_rail_map/services/StationNameConst.dart';
+import 'package:firebase_admob/firebase_admob.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   runApp(MaterialApp(
     title: 'Dublin Rail Map',
     theme: new ThemeData(scaffoldBackgroundColor: backgroundColor),
@@ -23,6 +29,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
+  BannerAd _bannerAd;
+
   int _selectedIndex = 0;
   final myController = TextEditingController();
 
@@ -40,15 +49,31 @@ class _MyAppState extends State<MyApp> {
   ];
 
   void _onItemTapped(int index) {
+    if (index == 2) {
+      createInterstitialAd()..load()..show();
+    }
     setState(() {
       _selectedIndex = index;
     });
   }
 
   @override
-  initState() {
+  void initState() {
     super.initState();
+
+    FirebaseAdMob.instance.initialize(appId: adsAppId);
+
+    _bannerAd = createBannerAd()
+      ..load()
+      ..show(anchorType: AnchorType.bottom, anchorOffset: 68.0);
+
     _selectedIndex = widget.index ?? 0;
+  }
+
+  @override
+  void dispose() {
+    _bannerAd?.dispose();
+    super.dispose();
   }
 
   @override
@@ -80,4 +105,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

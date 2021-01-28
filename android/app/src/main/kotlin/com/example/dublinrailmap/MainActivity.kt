@@ -1,4 +1,4 @@
-package com.example.dublin_rail_map
+package com.itchybumr.dublinrailmap
 
 import io.flutter.embedding.android.FlutterActivity
 

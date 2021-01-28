@@ -2,6 +2,7 @@ import 'package:dublin_rail_map/page/OverviewPage.dart';
 import 'package:dublin_rail_map/page/SearchBar.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:tweet_webview/tweet_webview.dart';
 
 class SearchPage extends StatefulWidget {
   final callback;
@@ -47,6 +48,24 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tweets = [
+      '1346562858713313282',
+      '1325399463624663040',
+    ];
+
+    final list = ListView.builder(
+      shrinkWrap: true,
+      scrollDirection: Axis.vertical,
+      itemCount: tweets.length,
+      itemBuilder: (context, index) {
+        var tweetID = tweets[index];
+        return Card(
+          color: Colors.white,
+          child: TweetWebView.tweetID(tweetID),
+        );
+      },
+    );
+
     return Stack(
       children: <Widget>[
         Positioned(
@@ -55,23 +74,9 @@ class _SearchPageState extends State<SearchPage> {
           right: 1,
           bottom: 10,
           child: Container(
-            color: Colors.black87,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 5.0),
-                  child: Text(
-                    "Sample",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline4
-                        .copyWith(color: Colors.white),
-                  ),
-                )
-              ],
-            ),
+            margin: const EdgeInsets.symmetric(
+                horizontal: 16.0, vertical: 5.0),
+            child: list,
           ),
         ),
         Positioned(

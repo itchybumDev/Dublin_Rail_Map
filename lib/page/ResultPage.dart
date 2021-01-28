@@ -1,3 +1,4 @@
+import 'package:dublin_rail_map/services/AdsService.dart';
 import 'package:dublin_rail_map/services/DataService.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -18,6 +19,7 @@ class _ResultPageState extends State<ResultPage> {
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
+    showAds(index);
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => MyApp(index: index)));
   }

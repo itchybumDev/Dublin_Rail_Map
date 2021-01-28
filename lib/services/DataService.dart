@@ -1,12 +1,52 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:twitter_api/twitter_api.dart';
 
 //Length 19, anything, 26, 21, 16
 enum StationType { origin, message, transfer, intermediate, destination }
 
 class DataService {
+
+
+  static Future<List<String>> getTweetId() async {
+
+    var _twitterOauth = new twitterApi(
+        consumerKey: twitterApiKey,
+        consumerSecret: twitterKeySecret,
+        token: accessToken,
+        tokenSecret: accessTokenSecret
+    );
+
+    Future twitterRequest = _twitterOauth.getTwitterRequest(
+      // Http Method
+      "GET",
+      // Endpoint you are trying to reach
+      "statuses/user_timeline.json",
+      // The options for the request
+      options: {
+        "screen_name": "DelayRail",
+        "count": "10",
+        "trim_user": "true",
+        "tweet_mode": "extended", // Used to prevent truncating tweets
+      },
+    );
+
+// Wait for the future to finish
+    var res = await twitterRequest;
+
+    if (res.statusCode == 200) {
+      var tweets = json.decode(res.body);
+      return tweets.map((e) => e['id']).toList();
+    } else {
+      return null;
+    }
+  }
+
+
   static Future<List<OneSchedule>> getRailTime(
       @required String origin, @required String destination) async {
     print("Downloading");
