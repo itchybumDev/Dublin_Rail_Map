@@ -1,67 +1,52 @@
-import 'dart:convert';
-
+import 'package:dart_twitter_api/twitter_api.dart';
+import 'package:dublin_rail_map/services/Const.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:twitter_api/twitter_api.dart';
 
 //Length 19, anything, 26, 21, 16
 enum StationType { origin, message, transfer, intermediate, destination }
 
 class DataService {
-
-
   static Future<List<String>> getTweetId() async {
-
-    var _twitterOauth = new twitterApi(
+    final twitterApi = TwitterApi(
+      client: TwitterClient(
         consumerKey: twitterApiKey,
         consumerSecret: twitterKeySecret,
         token: accessToken,
-        tokenSecret: accessTokenSecret
-    );
-
-    Future twitterRequest = _twitterOauth.getTwitterRequest(
-      // Http Method
-      "GET",
-      // Endpoint you are trying to reach
-      "statuses/user_timeline.json",
-      // The options for the request
-      options: {
-        "screen_name": "DelayRail",
-        "count": "10",
-        "trim_user": "true",
-        "tweet_mode": "extended", // Used to prevent truncating tweets
-      },
+        secret: accessTokenSecret,
+      ),
     );
 
 // Wait for the future to finish
-    var res = await twitterRequest;
+    var res = await twitterApi.timelineService
+        .userTimeline(screenName: "IrishRail", count: 50, excludeReplies: true, includeRts: false);
+    List<String> ans = [];
+    res.forEach((tweet) => ans.add(tweet.idStr));
 
-    if (res.statusCode == 200) {
-      var tweets = json.decode(res.body);
-      return tweets.map((e) => e['id']).toList();
-    } else {
-      return null;
-    }
+    return ans;
   }
-
 
   static Future<List<OneSchedule>> getRailTime(
       @required String origin, @required String destination) async {
     print("Downloading");
     var now = new DateTime.now();
+    now = now.subtract(Duration(minutes: 10));
     var formatter = new DateFormat('dd/MM/yyyy');
 
     String base =
-        'http://journeyplanner.irishrail.ie/bin/query.exe/en?queryPageDisplayed=yes&start=Later&outwardSooner=yes&REQ1HafasSearchForw=1&HWAI=JS!js=yes&HWAI=JS!ajax=yes&outwardConDetails=&REQ0JourneyStopsS0A=255&REQ0JourneyStopsZ0A=255&journey_mode=single&REQ0HafasPeriodToSearch=1440&REQ0HafasPeriodSearch=2&REQ0HafasSearchForw=1&REQ1HafasPeriodSearch=2&REQ0JourneyDate=';
+        'https://journeyplanner.irishrail.ie/bin/query.exe/en?queryPageDisplayed=yes&start=Later&outwardSooner=yes&REQ1HafasSearchForw=1&HWAI=JS!js=yes&HWAI=JS!ajax=yes&outwardConDetails=&REQ0JourneyStopsS0A=255&REQ0JourneyStopsZ0A=255&journey_mode=single&REQ0HafasPeriodToSearch=1440&REQ0HafasPeriodSearch=2&REQ0HafasSearchForw=1&REQ1HafasPeriodSearch=2&REQ0JourneyDate=';
     String todayDate = formatter.format(now);
     String start = '&REQ0JourneyStopsS0G=';
     String startStation = origin.replaceAll(" ", "%20");
     String stop = '&REQ0JourneyStopsZ0G=';
     String stopStation = destination.replaceAll(" ", "%20");
+    String startT = '&REQ0JourneyTime=';
+    String startTime = DateFormat('HH:mm').format(now);
+
     String fullUrl =
-        base + todayDate + start + startStation + stop + stopStation;
+        base + todayDate + start + startStation + stop + stopStation + startT + startTime;
     print(fullUrl);
     var response = await http.get(fullUrl);
 
@@ -94,13 +79,14 @@ class DataService {
             rowData = processOrigin(data);
           } else if (!hasArr(data) && !hasDep(data)) {
             rowData = processMessage(data);
-          } else if (hasDep(data) && hasArr(data) && data.length < 23) {
+          } else if (hasDep(data) && hasArr(data) && data.length < 25) {
             rowData = processIntermediateStop(data);
           } else if (hasArr(data) && !hasDep(data)) {
             rowData = processDestination(data);
           } else {
             rowData = processTransfer(data);
           }
+          rowData.removeArrAndDep();
           oneSchedule.addRow(rowData);
         }
       } catch (e) {
@@ -115,6 +101,7 @@ class DataService {
 
   static RowInfo processOrigin(List<String> data) {
     removeNullOrEmpty(data);
+
     String arrivalTime = null;
     String departureTime = data[0].trim();
     String stationName = data[2].trim();
@@ -127,6 +114,11 @@ class DataService {
         stationName: stationName,
         departurePlatform: platformName,
         message: message);
+
+    // Check delay time
+    if (data[1].contains("(")) {
+      row.setDelayTime(data[1].replaceAll("Dep", '').trim());
+    }
     return row;
   }
 
@@ -136,8 +128,7 @@ class DataService {
     String departureTime = null;
     String stationName = null;
     String platformName = null;
-    String message =
-        data.join(" | ").toString().replaceAll(RegExp(r'\s+'), ' ');
+    String message = data.join(" | ").toString().replaceAll(RegExp(r'\s+'), ' ');
     var row = RowInfo(
         type: StationType.message,
         arrivalTime: arrivalTime,
@@ -151,9 +142,9 @@ class DataService {
   static RowInfo processIntermediateStop(List<String> data) {
     removeNullOrEmpty(data);
 
-    String arrivalTime = data[0].split('A')[0].trim();
-    String departureTime = data[1].split('D')[0].trim();
-    String stationName = data[2].trim();
+    String arrivalTime = data[0].trim();
+    String departureTime = data[1].trim();
+    String stationName = data[data.length - 1].trim();
     String platformName = null;
     String message = null;
     var row = RowInfo(
@@ -190,7 +181,7 @@ class DataService {
     String arrivalPlatform;
     String departurePlatform;
     String message;
-    var time = List();
+    var time = [];
     bool hasDepAppear = false;
     //After this loop, time and platform should only have 2 elements each.
 
@@ -204,7 +195,7 @@ class DataService {
         departurePlatform = s;
       } else if (s.contains('Platform') && s.length >= 16) {
         //do nothing
-      } else if (s.contains('Dep')){
+      } else if (s.contains('Dep')) {
         hasDepAppear = true;
       } else {
         stationName = s;
@@ -226,11 +217,9 @@ class DataService {
     data.removeWhere((value) => value == null || value.trim().isEmpty);
   }
 
-  static bool hasDep(List<String> data) =>
-      data.any((String value) => value.contains('Dep'));
+  static bool hasDep(List<String> data) => data.any((String value) => value.contains('Dep'));
 
-  static bool hasArr(List<String> data) =>
-      data.any((String value) => value.contains('Arr'));
+  static bool hasArr(List<String> data) => data.any((String value) => value.contains('Arr'));
 
   static bool isNumeric(String s) {
     if (s == null) {
@@ -273,6 +262,19 @@ class RowInfo {
       this.arrivalPlatform,
       this.departurePlatform,
       this.message});
+
+  void removeArrAndDep() {
+    if (this.arrivalTime != null) {
+      this.arrivalTime = this.arrivalTime.replaceAll('Arr', '').trim();
+    }
+    if (this.departureTime != null) {
+      this.departureTime = this.departureTime.replaceAll('Dep', ''.trim());
+    }
+  }
+
+  void setDelayTime(String delayTime) {
+    this.departureTime += ' ' + delayTime.trim();
+  }
 
   @override
   String toString() {

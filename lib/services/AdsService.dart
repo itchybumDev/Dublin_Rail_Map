@@ -1,32 +1,26 @@
-
-import 'package:firebase_admob/firebase_admob.dart';
 // InterstitialAd _interstitialAd;
+import 'dart:io';
 
-String testBannerAdId = BannerAd.testAdUnitId;
-String testInterstitialAdId = InterstitialAd.testAdUnitId;
-String testAppId = FirebaseAdMob.testAppId;
+import 'package:dublin_rail_map/services/Const.dart';
 
-void showAds(int index) {
-  if (index == 2) {
-    createInterstitialAd()..load()..show();
+class AdHelper {
+  static String get bannerAdUnitId {
+    if (Platform.isAndroid) {
+      return bannerAdId;
+    } else if (Platform.isIOS) {
+      return iOsbannerAdId;
+    } else {
+      throw new UnsupportedError('Unsupported platform');
+    }
   }
-}
 
-BannerAd createBannerAd() {
-  return BannerAd(
-    adUnitId: BannerAd.testAdUnitId,
-    size: AdSize.banner,
-    listener: (MobileAdEvent event) {
-      print("BannerAd event $event");
-    },
-  );
-}
-
-InterstitialAd createInterstitialAd() {
-  return InterstitialAd(
-    adUnitId: InterstitialAd.testAdUnitId,
-    listener: (MobileAdEvent event) {
-      print("InterstitialAd event $event");
-    },
-  );
+  static String get interstitialAdUnitId {
+    if (Platform.isAndroid) {
+      return interstitialAdId;
+    } else if (Platform.isIOS) {
+      return iOsinterstitialAdId;
+    } else {
+      throw new UnsupportedError('Unsupported platform');
+    }
+  }
 }

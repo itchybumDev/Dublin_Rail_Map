@@ -1,17 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:dublin_rail_map/page/OverviewPage.dart';
 import 'package:dublin_rail_map/page/SearchBar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tweet_webview/tweet_webview.dart';
 
 class SearchPage extends StatefulWidget {
-  final callback;
-
-  const SearchPage({
-    Key key,
-    @required this.callback,
-  }) : super(key: key);
-
   @override
   _SearchPageState createState() => _SearchPageState();
 }
@@ -27,6 +22,7 @@ class _SearchPageState extends State<SearchPage> {
 
   String _origin = '';
   String _destination = '';
+  List<String> tweetIds = [];
 
   Function _setOrigin(String station) {
     setState(() {
@@ -48,39 +44,15 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tweets = [
-      '1346562858713313282',
-      '1325399463624663040',
-    ];
+    const padding_top = 40.0;
 
-    final list = ListView.builder(
-      shrinkWrap: true,
-      scrollDirection: Axis.vertical,
-      itemCount: tweets.length,
-      itemBuilder: (context, index) {
-        var tweetID = tweets[index];
-        return Card(
-          color: Colors.white,
-          child: TweetWebView.tweetID(tweetID),
-        );
-      },
-    );
+    Widget legends = getLegends(context);
 
     return Stack(
       children: <Widget>[
+        Positioned(top: 190, right: 0, left: 0, child: Platform.isAndroid ? legends : Container()),
         Positioned(
-          top: 200,
-          left: 1,
-          right: 1,
-          bottom: 10,
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-                horizontal: 16.0, vertical: 5.0),
-            child: list,
-          ),
-        ),
-        Positioned(
-            top: 140,
+            top: 140 + padding_top,
             right: 30,
             child: RaisedButton(
               color: Colors.greenAccent,
@@ -94,13 +66,13 @@ class _SearchPageState extends State<SearchPage> {
         Align(
           alignment: Alignment.topCenter,
           child: AutocompleteSearchBar(
-              margin: EdgeInsets.fromLTRB(3, 80, 3, 0),
+              margin: EdgeInsets.fromLTRB(3, 80 + padding_top, 3, 0),
               overlayBorderRadius: BorderRadius.all(Radius.circular(20)),
               onSearchResultTap: _setDestination,
               hintText: "Destination Station"),
         ),
         Positioned(
-            top: 59,
+            top: 59 + padding_top,
             left: 13,
             child: Icon(
               FontAwesomeIcons.longArrowAltDown,
@@ -109,12 +81,19 @@ class _SearchPageState extends State<SearchPage> {
         Align(
           alignment: Alignment.topCenter,
           child: AutocompleteSearchBar(
-              margin: EdgeInsets.symmetric(horizontal: 3, vertical: 10),
+              margin: EdgeInsets.fromLTRB(3, 10 + padding_top, 3, 10),
               overlayBorderRadius: BorderRadius.all(Radius.circular(20)),
               onSearchResultTap: _setOrigin,
               hintText: "Origin Station"),
         )
       ],
+    );
+  }
+
+  Widget getLegends(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      child: Image.asset("assets/poster.jpg"),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:dublin_rail_map/services/AdsService.dart';
 import 'package:dublin_rail_map/services/DataService.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:timeline_tile/timeline_tile.dart';
 
 import '../main.dart';
@@ -16,18 +17,116 @@ class ResultPage extends StatefulWidget {
 }
 
 class _ResultPageState extends State<ResultPage> {
+  BannerAd _bannerAd;
+  bool _isBannerAdReady = false;
+
+  InterstitialAd _interstitialAd;
+  int _numInterstitialLoadAttempts = 0;
+  int maxFailedLoadAttempts = 3;
+
   int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
-    showAds(index);
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => MyApp(index: index)));
+    if (index == 2) {
+      _showInterstitialAd();
+    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => MyApp(index: index)));
+  }
+
+  void _createBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          print('Failed to load a banner ad: ${err.message}');
+          _isBannerAdReady = false;
+          ad.dispose();
+        },
+      ),
+    );
+
+    _bannerAd.load();
+  }
+
+  void _createInterstitialAd() {
+    InterstitialAd.load(
+        adUnitId: AdHelper.interstitialAdUnitId,
+        request: AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            print('$ad loaded');
+            _interstitialAd = ad;
+            _numInterstitialLoadAttempts = 0;
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            print('InterstitialAd failed to load: $error.');
+            _numInterstitialLoadAttempts += 1;
+            _interstitialAd = null;
+            if (_numInterstitialLoadAttempts <= maxFailedLoadAttempts) {
+              _createInterstitialAd();
+            }
+          },
+        ));
+  }
+
+  void _showInterstitialAd() {
+    if (_interstitialAd == null) {
+      print('Warning: attempt to show interstitial before loaded.');
+      return;
+    }
+    _interstitialAd.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (InterstitialAd ad) => print('ad onAdShowedFullScreenContent.'),
+      onAdDismissedFullScreenContent: (InterstitialAd ad) {
+        print('$ad onAdDismissedFullScreenContent.');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+      onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+        print('$ad onAdFailedToShowFullScreenContent: $error');
+        ad.dispose();
+        _createInterstitialAd();
+      },
+    );
+    _interstitialAd.show();
+    _interstitialAd = null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _createBannerAd();
+    _createInterstitialAd();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _ActivityTimeline(timeline: widget.schedule),
+      body: Stack(children: [
+        _ActivityTimeline(timeline: widget.schedule),
+        if (_isBannerAdReady)
+          Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              width: _bannerAd.size.width.toDouble(),
+              height: _bannerAd.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd),
+            ),
+          ),
+      ]),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -39,8 +138,8 @@ class _ResultPageState extends State<ResultPage> {
             label: 'Map',
           ),
           BottomNavigationBarItem(
-            icon: Icon(FontAwesomeIcons.handHoldingUsd),
-            label: 'Ads',
+            icon: Icon(FontAwesomeIcons.twitter),
+            label: 'Tweets',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -64,7 +163,7 @@ class _ActivityTimelineState extends State<_ActivityTimeline> {
   List<Step> _steps;
 
   List<Step> _generateData() {
-    List<Step> tmp = new List();
+    List<Step> tmp = [];
     List<RowInfo> rows = widget.timeline.getRows();
     for (int i = 0; i < rows.length; i++) {
       RowInfo row = rows[i];
@@ -102,7 +201,7 @@ class _ActivityTimelineState extends State<_ActivityTimeline> {
         tmp.add(Step(
           type: Type.checkpoint,
           rowInfo: row,
-          icon: Icons.lightbulb,
+          icon: Icons.pin_drop_outlined,
           message: row.stationName,
           color: const Color(0xFFF2F2F2),
         ));
@@ -134,7 +233,7 @@ class _ActivityTimelineState extends State<_ActivityTimeline> {
                   Expanded(
                     child: _TimelineActivity(steps: _steps),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -246,18 +345,15 @@ class _RightChildTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double minHeight =
-        step.isCheckpoint ? 100 : 10.0 * 8;
+    final double minHeight = step.isCheckpoint ? 100 : 10.0 * 8;
 
-    List<Widget> children = new List();
+    List<Widget> children = [];
 
     if (step.rowInfo.type != StationType.message) {
       //Arriving Platform
-      if (step.rowInfo.arrivalPlatform != null &&
-          step.rowInfo.arrivalPlatform.isNotEmpty) {
+      if (step.rowInfo.arrivalPlatform != null && step.rowInfo.arrivalPlatform.isNotEmpty) {
         children.add(Padding(
-          padding: EdgeInsets.only(
-              left: step.isCheckpoint ? 80 : 99, top: 2, bottom: 2, right: 2),
+          padding: EdgeInsets.only(left: step.isCheckpoint ? 80 : 99, top: 2, bottom: 2, right: 2),
           child: RichText(
             text: TextSpan(
                 style: new TextStyle(
@@ -275,8 +371,7 @@ class _RightChildTimeline extends StatelessWidget {
 
       //Main Station Name
       children.add(Padding(
-        padding: EdgeInsets.only(
-            left: step.isCheckpoint ? 20 : 26, top: 8, bottom: 8, right: 8),
+        padding: EdgeInsets.only(left: step.isCheckpoint ? 20 : 26, top: 8, bottom: 8, right: 8),
         child: RichText(
           text: TextSpan(
               style: new TextStyle(
@@ -293,11 +388,9 @@ class _RightChildTimeline extends StatelessWidget {
       ));
 
       //Arriving Platform
-      if (step.rowInfo.departurePlatform != null &&
-          step.rowInfo.departurePlatform.isNotEmpty) {
+      if (step.rowInfo.departurePlatform != null && step.rowInfo.departurePlatform.isNotEmpty) {
         children.add(Padding(
-          padding: EdgeInsets.only(
-              left: step.isCheckpoint ? 80 : 99, top: 2, bottom: 2, right: 2),
+          padding: EdgeInsets.only(left: step.isCheckpoint ? 80 : 99, top: 2, bottom: 2, right: 2),
           child: RichText(
             text: TextSpan(
                 style: new TextStyle(
@@ -317,8 +410,7 @@ class _RightChildTimeline extends StatelessWidget {
         List<String> msgs = step.rowInfo.message.split('|');
         for (String s in msgs) {
           children.add(Padding(
-            padding: EdgeInsets.only(
-                left: 15),
+            padding: EdgeInsets.only(left: 15),
             child: RichText(
               text: TextSpan(
                   style: new TextStyle(
@@ -354,12 +446,12 @@ class _LeftChildTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> children = new List();
+    List<Widget> children = [];
     if (step.rowInfo.type != StationType.intermediate) {
       if (step.hasArrivalTime) {
         children.add(Padding(
           padding: EdgeInsets.only(right: step.isCheckpoint ? 10 : 29),
-          child: Text("Arriving", textAlign: TextAlign.center),
+          child: Text("Arrive", textAlign: TextAlign.center),
         ));
         children.add(Padding(
           padding: EdgeInsets.only(right: step.isCheckpoint ? 10 : 29),
@@ -372,7 +464,7 @@ class _LeftChildTimeline extends StatelessWidget {
         ));
         children.add(Padding(
           padding: EdgeInsets.only(right: step.isCheckpoint ? 10 : 29),
-          child: Text("Departing", textAlign: TextAlign.center),
+          child: Text("Depart", textAlign: TextAlign.center),
         ));
         children.add(Padding(
           padding: EdgeInsets.only(right: step.isCheckpoint ? 10 : 29),
@@ -420,9 +512,7 @@ class Step {
 
   bool get isCheckpoint => type == Type.checkpoint;
 
-  bool get hasArrivalTime =>
-      rowInfo.arrivalTime != null && rowInfo.arrivalTime.isNotEmpty;
+  bool get hasArrivalTime => rowInfo.arrivalTime != null && rowInfo.arrivalTime.isNotEmpty;
 
-  bool get hasDepartureTime =>
-      rowInfo.departureTime != null && rowInfo.departureTime.isNotEmpty;
+  bool get hasDepartureTime => rowInfo.departureTime != null && rowInfo.departureTime.isNotEmpty;
 }

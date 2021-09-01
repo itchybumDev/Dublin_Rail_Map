@@ -4,8 +4,8 @@ import 'package:dublin_rail_map/services/StationNameConst.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 class AutocompleteSearchBarState with ChangeNotifier {
   TextEditingController _queryTextController = TextEditingController();
@@ -50,10 +50,8 @@ class AutocompleteSearchBarState with ChangeNotifier {
 
   List<String> getNames(String val) {
     List<String> brandsList = STATION_NAMES;
-    List<String> suggestionsList = List();
-    suggestionsList = brandsList
-        .where((i) => i.toLowerCase().startsWith(val.toLowerCase()))
-        .toList();
+    List<String> suggestionsList = [];
+    suggestionsList = brandsList.where((i) => i.toLowerCase().contains(val.toLowerCase())).toList();
     return suggestionsList;
   }
 
@@ -90,8 +88,7 @@ class AutocompleteSearchBar extends StatelessWidget {
       @required this.hintText,
       this.overlayBorderRadius,
       this.onSearchResultTap,
-      this.margin =
-          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0)})
+      this.margin = const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0)})
       : super(key: key);
 
   @override
@@ -124,21 +121,17 @@ class SearchBar extends StatelessWidget {
     final theme = Theme.of(context);
     final state = Provider.of<AutocompleteSearchBarState>(context);
 
-    final headerTopLeftBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.topLeft
-        : Radius.circular(2);
+    final headerTopLeftBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.topLeft : Radius.circular(2);
 
-    final headerTopRightBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.topRight
-        : Radius.circular(2);
+    final headerTopRightBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.topRight : Radius.circular(2);
 
-    final headerBottomLeftBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.bottomLeft
-        : Radius.circular(2);
+    final headerBottomLeftBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.bottomLeft : Radius.circular(2);
 
-    final headerBottomRightBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.bottomRight
-        : Radius.circular(2);
+    final headerBottomRightBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.bottomRight : Radius.circular(2);
 
     return Column(children: <Widget>[
       Material(
@@ -162,16 +155,14 @@ class SearchBar extends StatelessWidget {
                   textInputAction: TextInputAction.search,
                   controller: state._queryTextController,
                   style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.black87
-                          : null,
+                      color:
+                          Theme.of(context).brightness == Brightness.light ? Colors.black87 : null,
                       fontSize: 16.0),
                   decoration: InputDecoration(
                     hintText: hintText,
                     hintStyle: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.light
-                          ? Colors.black45
-                          : null,
+                      color:
+                          Theme.of(context).brightness == Brightness.light ? Colors.black45 : null,
                       fontSize: 16.0,
                     ),
                     border: InputBorder.none,
@@ -189,8 +180,7 @@ class SearchBar extends StatelessWidget {
               child: state._queryTextController.text != ''
                   ? Container(
                       margin: EdgeInsets.symmetric(vertical: 8),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.all(Radius.circular(20)),
                         color: Colors.grey[200],
@@ -222,21 +212,17 @@ class SearchResultList extends StatelessWidget {
     final theme = Theme.of(context);
     final state = Provider.of<AutocompleteSearchBarState>(context);
 
-    final headerTopLeftBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.topLeft
-        : Radius.circular(2);
+    final headerTopLeftBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.topLeft : Radius.circular(2);
 
-    final headerTopRightBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.topRight
-        : Radius.circular(2);
+    final headerTopRightBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.topRight : Radius.circular(2);
 
-    final headerBottomLeftBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.bottomLeft
-        : Radius.circular(2);
+    final headerBottomLeftBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.bottomLeft : Radius.circular(2);
 
-    final headerBottomRightBorderRadius = overlayBorderRadius != null
-        ? overlayBorderRadius.bottomRight
-        : Radius.circular(2);
+    final headerBottomRightBorderRadius =
+        overlayBorderRadius != null ? overlayBorderRadius.bottomRight : Radius.circular(2);
 
     if (state.response == null) {
       return Container();
@@ -254,9 +240,7 @@ class SearchResultList extends StatelessWidget {
               bottomRight: headerBottomRightBorderRadius),
         ),
         child: ListBody(
-          children: state.response
-              .map((p) => SearchResultItem(p, onSearchResultTap))
-              .toList(),
+          children: state.response.map((p) => SearchResultItem(p, onSearchResultTap)).toList(),
         ),
       ),
     );
@@ -271,8 +255,7 @@ class SearchResultItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state =
-        Provider.of<AutocompleteSearchBarState>(context, listen: false);
+    final state = Provider.of<AutocompleteSearchBarState>(context, listen: false);
 
     return ListTile(
       leading: Icon(Icons.location_on),
