@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 import 'package:dublin_rail_map/services/DataService.dart';
 import 'package:dublin_rail_map/widget/iOSTweetWebView.dart';
 import 'package:flutter/material.dart';
-import 'package:tweet_webview/tweet_webview.dart';
 
 class TweetsPage extends StatelessWidget {
   const TweetsPage({
@@ -24,10 +23,13 @@ class TweetsPage extends StatelessWidget {
                 itemCount: snapshot.data.length,
                 itemBuilder: (context, index) {
                   var tweetID = snapshot.data[index];
-                  return Card(
-                    child: Platform.isAndroid
-                        ? TweetWebView.tweetID(tweetID)
-                        : iOSTweetWebView.tweetID(tweetID),
+                  return GestureDetector(
+                    onTap: () { print("do nothing");},
+                    child: Card(
+                      child: Platform.isAndroid
+                          ? iOSTweetWebView.tweetID(tweetID)
+                          : iOSTweetWebView.tweetID(tweetID),
+                    ),
                   );
                 });
             final container = Container(color: Colors.black26, child: Center(child: list));
