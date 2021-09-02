@@ -2,10 +2,11 @@
  * Copyright (c) 2018 Larry Aasen. All rights reserved.
  */
 
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:dublin_rail_map/services/DataService.dart';
 
 class iOSTweetWebView extends StatefulWidget {
   final String tweetID;
@@ -26,40 +27,48 @@ class _iOSTweetWebViewState extends State<iOSTweetWebView> {
     // _requestTweet();
   }
 
+  Future<String> _getData(String tweetId) async {
+    // final body = '''<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Passengers travelling on Northside Dart services will experience delays due to a trespasser at near Raheny Station. -AB</p>&mdash; Iarnród Éireann #StaySafe (@IrishRail) <a href="https://twitter.com/IrishRail/status/1433397149841117185?ref_src=twsrc%5Etfw">September 2, 2021</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>''';
+    final body = await DataService.getTweetContent(tweetId);
+    final dataUrl = Uri.dataFromString(
+      '''<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+</head>
+<body>$body</body>
+</html>''',
+      mimeType: 'text/html',
+      encoding: Encoding.getByName('utf-8'),
+    ).toString();
+    return dataUrl;
+  }
+
   @override
   Widget build(BuildContext context) {
-    var child;
-    if (widget.tweetID != null) {
-      // final downloadUrl = Uri.file(_filename).toString();
+    return FutureBuilder(
+      future: _getData(widget.tweetID),
+      builder: (cxt, snapshot) {
+        if (snapshot.hasData) {
+          final webView = WebView(
+            initialUrl: snapshot.data,
+            javascriptMode: JavascriptMode.unrestricted,
+          );
+          Widget box = Container();
 
-      // Create the WebView to contian the tweet HTML
-      final webView = WebView(
-          initialUrl: 'https://twitter.com/IrishRail/status/${widget.tweetID}',
-          javascriptMode: JavascriptMode.unrestricted);
-
-      // The WebView creates an exception: RenderAndroidView object was given an infinite size during layout.
-      // To avoid that exception a max height constraint will be used. Hopefully soon the WebView will be able
-      // to size itself so it will not have an infinite height.
-      Widget box = Container();
-
-      if (Platform.isAndroid) {
-        box = LimitedBox(
-          maxHeight: 500.0,
-          child: webView,
-        );
-      } else {
-        box = SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: webView,
-        );
-      }
-
-      child = box;
-    } else {
-      child = Text('Loading...');
-    }
-
-    return Container(alignment: Alignment.center, child: child);
+          box = LimitedBox(
+            maxHeight: MediaQuery
+                .of(context)
+                .size
+                .height * 0.60,
+            child: webView,
+          );
+          return Container(alignment: Alignment.center, child: box);
+        } else {
+          return Container(child: Text('Loading...'));
+        }
+      },
+    );
   }
 }

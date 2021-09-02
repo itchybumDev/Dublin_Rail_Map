@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_twitter_api/twitter_api.dart';
 import 'package:dublin_rail_map/services/Const.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +11,21 @@ import 'package:intl/intl.dart';
 enum StationType { origin, message, transfer, intermediate, destination }
 
 class DataService {
+  static Future<String> getTweetContent(String id) async {
+    var url = 'https://publish.twitter.com/oembed?url=https%3A%2F%2Ftwitter.com%2FIrishRail%2Fstatus%2F${id}';
+    print(url);
+
+    var response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      var content = json.decode(response.body)['html'];
+      return content;
+    } else {
+      print(response.statusCode);
+      print(response.reasonPhrase);
+      return null;
+    }
+  }
   static Future<List<String>> getTweetId() async {
     final twitterApi = TwitterApi(
       client: TwitterClient(
@@ -21,7 +38,7 @@ class DataService {
 
 // Wait for the future to finish
     var res = await twitterApi.timelineService
-        .userTimeline(screenName: "IrishRail", count: 50, excludeReplies: true, includeRts: false);
+        .userTimeline(screenName: "IrishRail", count: 30, excludeReplies: true, includeRts: false);
     List<String> ans = [];
     res.forEach((tweet) => ans.add(tweet.idStr));
 
